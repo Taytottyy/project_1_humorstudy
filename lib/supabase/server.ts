@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr"; // Added type import
 import { cookies } from "next/headers";
 
 export async function createClient() {
@@ -9,13 +9,19 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        // We add the specific type here to stop the "implicitly has an any type" error
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
-            )
-          } catch { /* This can be ignored if called from a Server Component */ }
+            );
+          } catch {
+            // The Next.js middleware/server component pattern sometimes 
+            // throws when setting cookies, which is safe to ignore here.
+          }
         },
       },
     }
