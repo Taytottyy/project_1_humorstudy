@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "./lib/supabase/client";
 import { ThumbsUp, ThumbsDown, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
 import clsx from "clsx";
+import { AuthHeader } from "./components/auth-header";
+import { useAuth } from "./components/auth-provider";
 
 interface Caption {
   id: string;
@@ -23,6 +25,7 @@ type VoteValue = 1 | -1;
 
 export default function VotePage() {
   const supabase = createClient();
+  const { user, loading: authLoading } = useAuth();
 
   const [study, setStudy] = useState<Study | null>(null);
   const [captions, setCaptions] = useState<Caption[]>([]);
@@ -34,6 +37,27 @@ export default function VotePage() {
   const [done, setDone] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [pendingVote, setPendingVote] = useState<VoteValue | null>(null);
+
+  if (authLoading) {
+    return (
+      <div className="vote-shell">
+        <div className="vote-loading">
+          <Loader2 className="spin" size={32} />
+          <p>Loading authentication…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="vote-shell">
+        <div className="vote-error">
+          <p className="error-msg">Please sign in to vote on captions.</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     async function loadStudy() {
@@ -117,7 +141,7 @@ export default function VotePage() {
 
   const submitVote = useCallback(
     async (value: VoteValue) => {
-      if (!study || submitting || animating) return;
+      if (!study || submitting || animating || !user) return;
       const caption = captions[currentIndex];
       if (!caption) return;
 
@@ -127,6 +151,7 @@ export default function VotePage() {
       const { error: voteErr } = await supabase.from("caption_votes").insert({
         caption_id: caption.id,
         study_id: study.id,
+        user_id: user.id,
         vote: value,
         created_at: new Date().toISOString(),
       });
@@ -137,7 +162,7 @@ export default function VotePage() {
       setSubmitting(false);
       advance();
     },
-    [study, captions, currentIndex, submitting, animating, supabase, advance]
+    [study, captions, currentIndex, submitting, animating, supabase, advance, user]
   );
 
   const skip = useCallback(() => {
@@ -200,6 +225,7 @@ export default function VotePage() {
 
   return (
     <div className="vote-shell">
+      <AuthHeader />
       <header className="vote-header">
         <span className="vote-logo">crackd</span>
         <span className="vote-study-name">{study?.name}</span>
