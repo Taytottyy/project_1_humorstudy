@@ -46,9 +46,8 @@ export default function VotePage() {
     }
 
     async function loadStudy() {
-      // Skip if Supabase client is not available (build time)
       if (!supabase) {
-        setError("Database connection not available during build time");
+        setError("Database connection not available");
         setLoading(false);
         return;
       }
@@ -56,8 +55,6 @@ export default function VotePage() {
       try {
         setLoading(true);
         setError(null);
-
-        console.log("Loading study...");
 
         const { data: studyData, error: studyErr } = await supabase
           .from("studies")
@@ -67,17 +64,7 @@ export default function VotePage() {
           .limit(1)
           .single();
 
-        console.log("Study data:", studyData);
-
-        if (studyErr) {
-          console.error("Study error:", studyErr);
-          setError("No active study found. Please try again later.");
-          setLoading(false);
-          return;
-        }
-
-        if (!studyData) {
-          console.error("No study data found");
+        if (studyErr || !studyData) {
           setError("No active study found. Please try again later.");
           setLoading(false);
           return;
@@ -85,39 +72,30 @@ export default function VotePage() {
 
         setStudy(studyData);
 
-        console.log("Loading caption mappings...");
         const { data: mappings, error: mapErr } = await supabase
           .from("study_caption_mappings")
           .select("caption_id")
           .eq("study_id", studyData.id);
-        
-        console.log("Caption mappings:", mappings);
-        
+
         if (mapErr || !mappings || mappings.length === 0) {
-          console.error("Mapping error:", mapErr);
           setError("No captions found for this study.");
           setLoading(false);
           return;
         }
-        
+
         const captionIds = mappings.map((m: { caption_id: string }) => m.caption_id);
-        console.log("Caption IDs:", captionIds);
-        
-        console.log("Loading captions...");
+
         const { data: captionData, error: capErr } = await supabase
           .from("captions")
           .select("id, caption_text, image_id, images(url, image_description)")
           .in("id", captionIds);
-        
-        console.log("Caption data:", captionData);
-        
+
         if (capErr || !captionData) {
-          console.error("Caption error:", capErr);
           setError("Failed to load captions.");
           setLoading(false);
           return;
         }
-        
+
         const formatted: Caption[] = captionData.map((c: any) => ({
           id: c.id,
           caption_text: c.caption_text,
@@ -125,44 +103,19 @@ export default function VotePage() {
           image_url: c.images?.url ?? null,
           image_description: c.images?.image_description ?? null,
         }));
-        
-        console.log("Formatted captions:", formatted);
+
         setCaptions([...formatted].sort(() => Math.random() - 0.5));
-        console.log("Study and captions loaded successfully");
       } catch (err) {
         console.error("Load study error:", err);
-        setError("Something went wrong loading study. Please refresh the page.");
-        setLoading(false);
+        setError("Something went wrong. Please refresh the page.");
       } finally {
-        // Ensure loading is set to false even if there's an error
         setLoading(false);
       }
     }
 
     loadStudy();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, authLoading, user]);
-
-  if (authLoading) {
-    return (
-      <div className="vote-shell">
-        <div className="vote-loading">
-          <Loader2 className="spin" size={32} />
-          <p>Loading authentication…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="vote-shell">
-        <div className="vote-error">
-          <p className="error-msg">Please sign in to vote on captions.</p>
-        </div>
-      </div>
-    );
-  }
+  }, [authLoading, user]);
 
   const advance = useCallback(() => {
     setAnimating(true);
@@ -210,15 +163,35 @@ export default function VotePage() {
     advance();
   }, [animating, advance]);
 
-  const restart = () => {
+  const restart = useCallback(() => {
     setCurrentIndex(0);
     setVotes({});
     setDone(false);
     setCaptions((prev) => [...prev].sort(() => Math.random() - 0.5));
-  };
+  }, []);
 
-  const progress =
-    captions.length > 0 ? Math.round((currentIndex / captions.length) * 100) : 0;
+  // --- All hooks above this line, all early returns below ---
+
+  if (authLoading) {
+    return (
+      <div className="vote-shell">
+        <div className="vote-loading">
+          <Loader2 className="spin" size={32} />
+          <p>Loading authentication…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="vote-shell">
+        <div className="vote-error">
+          <p className="error-msg">Please sign in to vote on captions.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -260,6 +233,7 @@ export default function VotePage() {
     );
   }
 
+  const progress = captions.length > 0 ? Math.round((currentIndex / captions.length) * 100) : 0;
   const caption = captions[currentIndex];
   if (!caption) return null;
 
