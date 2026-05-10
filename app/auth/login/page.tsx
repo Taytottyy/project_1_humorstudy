@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "../../lib/supabase/client";
-import { useAuth } from "../../components/auth-provider";
+import { createClient } from "../../../../lib/supabase/client";
+import { useAuth } from "../../../../components/auth-provider";
 import { useRouter } from "next/navigation";
 import { LogIn, Mail, Lock } from "lucide-react";
 
