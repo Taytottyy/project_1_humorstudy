@@ -9,7 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 
 interface Caption {
   id: string;
-  caption_text: string;
+  content: string;
   image_id: string;
   image_url: string | null;
   image_description: string | null;
@@ -17,7 +17,7 @@ interface Caption {
 
 interface Study {
   id: string;
-  name: string;
+  slug: string;
   description: string | null;
 }
 
@@ -58,9 +58,9 @@ export default function VotePage() {
 
         const { data: studyData, error: studyErr } = await supabase
           .from("studies")
-          .select("id, name, description")
-          .lte("start_time", new Date().toISOString())
-          .order("start_time", { ascending: false })
+          .select("id, slug, description")
+          .lte("start_datetime_utc", new Date().toISOString())
+          .order("start_datetime_utc", { ascending: false })
           .limit(1)
           .single();
 
@@ -87,7 +87,7 @@ export default function VotePage() {
 
         const { data: captionData, error: capErr } = await supabase
           .from("captions")
-          .select("id, caption_text, image_id, images(url, image_description)")
+          .select("id, content, image_id, images(url, image_description)")
           .in("id", captionIds);
 
         if (capErr || !captionData) {
@@ -98,7 +98,7 @@ export default function VotePage() {
 
         const formatted: Caption[] = captionData.map((c: any) => ({
           id: c.id,
-          caption_text: c.caption_text,
+          content: c.content,
           image_id: c.image_id,
           image_url: c.images?.url ?? null,
           image_description: c.images?.image_description ?? null,
@@ -143,10 +143,9 @@ export default function VotePage() {
 
       const { error: voteErr } = await supabase.from("caption_votes").insert({
         caption_id: caption.id,
-        study_id: study.id,
-        user_id: user.id,
-        vote: value,
-        created_at: new Date().toISOString(),
+        created_by_user_id: user.id,
+        vote_value: value,
+        is_from_study: true,
       });
 
       if (voteErr) console.error("Vote error:", voteErr.message);
@@ -242,7 +241,7 @@ export default function VotePage() {
       <AuthHeader />
       <header className="vote-header">
         <span className="vote-logo">crackd</span>
-        <span className="vote-study-name">{study?.name}</span>
+        <span className="vote-study-name">{study?.slug}</span>
       </header>
 
       <div className="progress-bar-track">
@@ -275,7 +274,7 @@ export default function VotePage() {
         ) : null}
 
         <div className="caption-text-wrap">
-          <p className="caption-text">&ldquo;{caption.caption_text}&rdquo;</p>
+          <p className="caption-text">&ldquo;{caption.content}&rdquo;</p>
         </div>
       </div>
 
