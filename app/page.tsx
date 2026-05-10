@@ -1,4 +1,4 @@
-import VotePage from "./vote-page";
+import VotePage from "../vote-page";
 
 export const dynamic = "force-dynamic";
 
