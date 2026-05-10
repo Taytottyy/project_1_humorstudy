@@ -38,28 +38,9 @@ export default function VotePage() {
   const [animating, setAnimating] = useState(false);
   const [pendingVote, setPendingVote] = useState<VoteValue | null>(null);
 
-  if (authLoading) {
-    return (
-      <div className="vote-shell">
-        <div className="vote-loading">
-          <Loader2 className="spin" size={32} />
-          <p>Loading authentication…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="vote-shell">
-        <div className="vote-error">
-          <p className="error-msg">Please sign in to vote on captions.</p>
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
+    if (authLoading || !user) return;
+
     async function loadStudy() {
       // Skip if Supabase client is not available (build time)
       if (!supabase) {
@@ -71,9 +52,9 @@ export default function VotePage() {
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log("Loading study...");
-        
+
         const { data: studyData, error: studyErr } = await supabase
           .from("studies")
           .select("id, name, description")
@@ -81,23 +62,25 @@ export default function VotePage() {
           .order("start_time", { ascending: false })
           .limit(1)
           .single();
-        
+
         console.log("Study data:", studyData);
-        
+
         if (studyErr) {
           console.error("Study error:", studyErr);
           setError("No active study found. Please try again later.");
           setLoading(false);
           return;
         }
-        
+
         if (!studyData) {
           console.error("No study data found");
           setError("No active study found. Please try again later.");
           setLoading(false);
           return;
         }
-        
+
+        setStudy(studyData);
+
         console.log("Loading caption mappings...");
         const { data: mappings, error: mapErr } = await supabase
           .from("study_caption_mappings")
@@ -154,7 +137,28 @@ export default function VotePage() {
 
     loadStudy();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase]);
+  }, [supabase, authLoading, user]);
+
+  if (authLoading) {
+    return (
+      <div className="vote-shell">
+        <div className="vote-loading">
+          <Loader2 className="spin" size={32} />
+          <p>Loading authentication…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="vote-shell">
+        <div className="vote-error">
+          <p className="error-msg">Please sign in to vote on captions.</p>
+        </div>
+      </div>
+    );
+  }
 
   const advance = useCallback(() => {
     setAnimating(true);
