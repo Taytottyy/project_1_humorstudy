@@ -1,9 +1,9 @@
 "use client";
 
-import { createClientComponentClient } from '@supabase/auth-helpers-react';
+import { createClient } from "@/lib/supabase/client";
 
 export default function TestPage() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const handleLogin = async () => {
     await supabase.auth.signInWithOAuth({
