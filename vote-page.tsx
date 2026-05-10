@@ -63,7 +63,10 @@ export default function VotePage() {
     async function loadStudy() {
       try {
         setLoading(true);
-
+        setError(null);
+        
+        console.log("Loading study...");
+        
         const { data: studyData, error: studyErr } = await supabase
           .from("studies")
           .select("id, name, description")
@@ -71,39 +74,56 @@ export default function VotePage() {
           .order("start_time", { ascending: false })
           .limit(1)
           .single();
-
-        if (studyErr || !studyData) {
-          setError("No active study found. Check back soon!");
+        
+        console.log("Study data:", studyData);
+        
+        if (studyErr) {
+          console.error("Study error:", studyErr);
+          setError("No active study found. Please try again later.");
           setLoading(false);
           return;
         }
-
-        setStudy(studyData);
-
+        
+        if (!studyData) {
+          console.error("No study data found");
+          setError("No active study found. Please try again later.");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Loading caption mappings...");
         const { data: mappings, error: mapErr } = await supabase
           .from("study_caption_mappings")
           .select("caption_id")
           .eq("study_id", studyData.id);
-
+        
+        console.log("Caption mappings:", mappings);
+        
         if (mapErr || !mappings || mappings.length === 0) {
+          console.error("Mapping error:", mapErr);
           setError("No captions found for this study.");
           setLoading(false);
           return;
         }
-
+        
         const captionIds = mappings.map((m: { caption_id: string }) => m.caption_id);
-
+        console.log("Caption IDs:", captionIds);
+        
+        console.log("Loading captions...");
         const { data: captionData, error: capErr } = await supabase
           .from("captions")
           .select("id, caption_text, image_id, images(url, image_description)")
           .in("id", captionIds);
-
+        
+        console.log("Caption data:", captionData);
+        
         if (capErr || !captionData) {
+          console.error("Caption error:", capErr);
           setError("Failed to load captions.");
           setLoading(false);
           return;
         }
-
+        
         const formatted: Caption[] = captionData.map((c: any) => ({
           id: c.id,
           caption_text: c.caption_text,
@@ -111,11 +131,16 @@ export default function VotePage() {
           image_url: c.images?.url ?? null,
           image_description: c.images?.image_description ?? null,
         }));
-
+        
+        console.log("Formatted captions:", formatted);
         setCaptions([...formatted].sort(() => Math.random() - 0.5));
-      } catch {
-        setError("Something went wrong loading the study.");
+        console.log("Study and captions loaded successfully");
+      } catch (err) {
+        console.error("Load study error:", err);
+        setError("Something went wrong loading study. Please refresh the page.");
+        setLoading(false);
       } finally {
+        // Ensure loading is set to false even if there's an error
         setLoading(false);
       }
     }
