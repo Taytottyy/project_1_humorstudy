@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   url TEXT NOT NULL,
   image_description TEXT NOT NULL,
-  created_by_user_id TEXT NULL, -- Made nullable for flexibility
+  created_by_user_id TEXT NULL, -- Allow NULL values for sample data
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
