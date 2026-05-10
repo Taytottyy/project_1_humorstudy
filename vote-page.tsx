@@ -61,6 +61,13 @@ export default function VotePage() {
 
   useEffect(() => {
     async function loadStudy() {
+      // Skip if Supabase client is not available (build time)
+      if (!supabase) {
+        setError("Database connection not available during build time");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -147,7 +154,7 @@ export default function VotePage() {
 
     loadStudy();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [supabase]);
 
   const advance = useCallback(() => {
     setAnimating(true);
