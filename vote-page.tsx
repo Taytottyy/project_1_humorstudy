@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "./lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { ThumbsUp, ThumbsDown, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
 import clsx from "clsx";
-import { AuthHeader } from "./components/auth-header";
-import { useAuth } from "./components/auth-provider";
+import { AuthHeader } from "@/components/auth-header";
+import { useAuth } from "@/components/auth-provider";
 
 interface Caption {
   id: string;
