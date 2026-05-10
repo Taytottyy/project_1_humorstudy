@@ -1,13 +1,12 @@
 import { createBrowserClient } from "@supabase/ssr";
 
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!; // The "!" tells TypeScript it WILL be there
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
-  // Return null client if environment variables are missing (build time)
-  if (!supabaseUrl || !supabaseKey) {
-    return null;
-  }
-
-  return createBrowserClient(supabaseUrl, supabaseKey);
+  // We want to initialize even if keys are missing initially to avoid the "null" hang
+  return createBrowserClient(
+    supabaseUrl || "", 
+    supabaseKey || ""
+  );
 }
