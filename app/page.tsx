@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import VotePage from "../vote-page";
 import { ErrorBoundary } from "@/components/error-boundary";
