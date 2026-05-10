@@ -10,7 +10,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
