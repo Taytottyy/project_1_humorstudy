@@ -39,7 +39,11 @@ export default function VotePage() {
   const [pendingVote, setPendingVote] = useState<VoteValue | null>(null);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     async function loadStudy() {
       // Skip if Supabase client is not available (build time)
